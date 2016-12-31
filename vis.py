@@ -378,7 +378,7 @@ if __name__ == '__main__':
 
 	# c = get_spritename(1)
 
-	retjson = generate_count_json()
-	filename = "v2.json"
-	with open(filename, 'w') as outfile: 
-		outfile.write(retjson)
+	# retjson = generate_count_json()
+	# filename = "v2.json"
+	# with open(filename, 'w') as outfile: 
+	# 	outfile.write(retjson)
