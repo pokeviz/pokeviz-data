@@ -3,6 +3,7 @@ Build script.
 """
 import os
 import os.path
+
 # Create new sqlite everytime
 database_filename = 'poke.sqlite'
 if os.path.isfile(database_filename): 

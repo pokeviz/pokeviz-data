@@ -140,6 +140,26 @@ def get_spritename(pokemon):
 
 
 """
+Basic query to get Pokemon tiers' pks given a Pokemon generation.
+"""
+def get_tier(gen):
+	query = (Competitive
+		.select(Competitive.pk)
+		.where(Competitive.gen == generation))
+	return query
+
+
+"""
+Basic query to get Pokemon pks given a Pokemon tier.
+"""
+def get_pokemon_by_tier(tier):
+	query = (PokemonCompetitive
+		.select(PokemonCompetitive.pokemon)
+		.where(PokemonCompetitive.tier == tier))
+	return query 
+
+
+"""
 Query to get singly typed Pokemon(s).
 """
 def get_single_type_pokemon(gen, 
@@ -217,9 +237,9 @@ def get_double_type_pokemon(gen,
 
 
 """
-
+SQL fetch one but random.
 """
-def _fetchone(select_query, selection):
+def _fetch_one_random(select_query, selection):
 	retvals = [getattr(s, selection) for s in select_query]
 	# Prevent index out of range error
 	if len(retvals) == 0:
@@ -229,8 +249,10 @@ def _fetchone(select_query, selection):
 
 """
 Generate master json for the first visualization.
+Generate master json for the second visualization. 
+This one is simply just counting.
 """
-def generate_type_json():
+def generate_vis_json(which):
 	# {
 	# 	"LAX": [
 	#		[{	
@@ -283,9 +305,8 @@ def generate_type_json():
 									type_id2 = j + 1, 
 									option = option, 
 									mode = mode)
-
-						
-						pokemon = _fetchone(query, 'pk')
+	
+						pokemon = _fetch_one_random(query, 'pk')
 						# If its empty, that means theres no
 						# pokemon with that typing
 						# We can safely skip it
@@ -293,8 +314,13 @@ def generate_type_json():
 						# 'is not' doesn't work
 						if pokemon != []:
 							sprite_query = get_spritename(pokemon)
-							spritename = _fetchone(sprite_query, 'spritename')
-						sec_container.append(spritename)
+							spritename = _fetch_one_random(sprite_query, 'spritename')
+						# Temporary fix
+						if which == 1:
+							sec_container.append(spritename)
+						else:
+							sec_container.append(query.count())
+
 					pri_container.append(sec_container)
 				opt_container[option] = pri_container
 			# Append to the container while we have all the options
@@ -306,79 +332,38 @@ def generate_type_json():
 
 
 """
-Generate master json for the second visualization. 
-This one is simply just counting.
+Visualization 3: Competitive Data
+For each tier, get the Pokemon associated to each tier
 """
-def generate_count_json():
-	# [[
-	# 	{		
-	# 			'NO-FORM': [[]... repeated 18 times ...], 
-	# 			'NO-LEGENDARY': [[]...], 
-	# 			'NO-MEGA': [[]...]
-	# 	}],
-	# 	[... repeated for 7 generations ...] 	
-	# ]
-	generations = range(0, 7)
-	options = ['DEFAULT', 'NO-MEGA', 'NO-FORM']
-	primaries = range(0, 18)
-	secondaries = range(0, 18)	
+def get_pokemon_by_tiers(tiers):
+	temp_pks = []
+	for tier in tiers:
+		query = get_pokemon_by_tier(tier)
+		temp_pks.append([i.pokemon.pk for i in query])
+	return zip(tiers, temp_pks)
 
-	retjson = []
-	# lol again
-	for generation in generations:
-		opt_container = {}
-		for option in options:
-			pri_container = []
-			# Check, need to save space
-			if "MEGA" in option and generation < 5:
-				continue
-			elif "FORM" in option and generation < 2:
-				continue
-			for i in primaries:
-				sec_container = []
-				for j in secondaries:
-					if i == j:
-						query = get_single_type_pokemon(
-								gen = generation + 1, 
-								type_id = i + 1, 
-								option = option)
-					else:
-					# Otherwise fetch from double type
-						query = get_double_type_pokemon(
-								gen = generation + 1, 
-								type_id1 = i + 1, 
-								type_id2 = j + 1, 
-								option = option, 
-								mode = 'STRICT')
-					sec_container.append(query.count())
-				pri_container.append(sec_container)
-			opt_container[option] = pri_container
-		retjson.append(opt_container)
-	return json.dumps(retjson, separators=(',',':'))
+
+"""
+SELECT pt.pokemon, p.stats, t1.type, t2.type
+FROM 
+	Competitive c
+		JOIN
+	PokemonTier pt ON c.tier = pt.tier
+		JOIN
+	Pokemon p ON pt.pokemon = p.pk
+		JOIN
+	(SELECT type
+	FROM PokemonType pt
+	WHERE pt.slot = 1) t1
+		LEFT JOIN
+	(SELECT type
+	FROM PokemonType pt
+	WHERE pt.slot = 2) t2
+WHERE pt.tier = ?
+"""
 
 
 if __name__ == '__main__':
-	pass
-	# a = get_single(3,14)
-	# # Default
-	# for i in a:
-	# 	print i.name
-
-
-	# No legendary
-	# a = get_single_type_pokemon(1,14)
-
-	# b = get_double_type_pokemon(gen=7, 
-	# 	  type_id1=9, 
-	# 	  type_id2=3, 
-	# 	  option='DEFAULT', 
-	# 	  mode='STRICT')
-
-	# print a.count()
-
-	# c = get_spritename(1)
-
-	# retjson = generate_count_json()
-	# filename = "v2.json"
-	# with open(filename, 'w') as outfile: 
-	# 	outfile.write(retjson)
+	generation = 6
+	a = get_tier(generation)
+	b = get_pokemon_by_tiers([i.pk for i in a])
