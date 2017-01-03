@@ -85,6 +85,7 @@ Basic query to get Pokemon with a given type id.
 TODO: figure out a way to clean up selection variable
 """ 
 def get_pokemon_type(gen, 
+					 pokemon=None,
 					 type_id=None, 
 					 slot=None, 
 					 selection=[], 
@@ -100,6 +101,9 @@ def get_pokemon_type(gen,
 		.where(PokemonType.gen_start <= gen,
 			   PokemonType.gen_until >= gen))
 
+	if pokemon is not None:
+		query = query.where(PokemonType.pokemon == pokemon)
+
 	if type_id is not None:
 		query = query.where(PokemonType.pokemon_type == type_id)
 
@@ -108,6 +112,23 @@ def get_pokemon_type(gen,
 
 	if alias is not None:
 		query = query.alias(alias)
+
+	return query
+
+
+"""
+Basic query to get Pokemon data given Pokemon pk.
+"""
+def get_pokemon(pk, selection=[]):
+	# Hardcode this
+	if 'pk' not in selection:
+		selection.append('pk')
+
+	# Base select and where clause
+	selecting = [getattr(Pokemon, s) for s in selection]
+	query = (Pokemon
+		.select(*selecting)
+		.where(Pokemon.pk == pk))
 
 	return query
 
@@ -144,7 +165,8 @@ Basic query to get Pokemon tiers' pks given a Pokemon generation.
 """
 def get_tier(gen):
 	query = (Competitive
-		.select(Competitive.pk)
+		.select(Competitive.pk,
+			    Competitive.name)
 		.where(Competitive.gen == generation))
 	return query
 
@@ -331,6 +353,7 @@ def generate_vis_json(which):
 	return json.dumps(retjson, separators=(',',':'))
 
 
+
 """
 Visualization 3: Competitive Data
 For each tier, get the Pokemon associated to each tier
@@ -343,27 +366,5 @@ def get_pokemon_by_tiers(tiers):
 	return zip(tiers, temp_pks)
 
 
-"""
-SELECT pt.pokemon, p.stats, t1.type, t2.type
-FROM 
-	Competitive c
-		JOIN
-	PokemonTier pt ON c.tier = pt.tier
-		JOIN
-	Pokemon p ON pt.pokemon = p.pk
-		JOIN
-	(SELECT type
-	FROM PokemonType pt
-	WHERE pt.slot = 1) t1
-		LEFT JOIN
-	(SELECT type
-	FROM PokemonType pt
-	WHERE pt.slot = 2) t2
-WHERE pt.tier = ?
-"""
-
-
 if __name__ == '__main__':
-	generation = 6
-	a = get_tier(generation)
-	b = get_pokemon_by_tiers([i.pk for i in a])
+	pass
