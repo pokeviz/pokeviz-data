@@ -353,7 +353,6 @@ def generate_vis_json(which):
 	return json.dumps(retjson, separators=(',',':'))
 
 
-
 """
 Visualization 3: Competitive Data
 For each tier, get the Pokemon associated to each tier
