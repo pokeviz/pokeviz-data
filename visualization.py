@@ -117,18 +117,19 @@ def get_pokemon_type(gen,
 
 
 """
-Basic query to get Pokemon data given Pokemon pk.
+Basic query to get Pokemon data given Pokemon pk. 
 """
-def get_pokemon(pk, selection=[]):
+def get_pokemon(pk=None, selection=[]):
 	# Hardcode this
 	if 'pk' not in selection:
 		selection.append('pk')
 
 	# Base select and where clause
 	selecting = [getattr(Pokemon, s) for s in selection]
-	query = (Pokemon
-		.select(*selecting)
-		.where(Pokemon.pk == pk))
+	query = (Pokemon.select(*selecting))
+
+	if pk:
+		query = query.where(Pokemon.pk == pk)
 
 	return query
 

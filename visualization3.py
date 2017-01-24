@@ -72,7 +72,10 @@ def generate_v2a_json():
 
 def generate_v5_json():
 	retjson = []
-	for pokemon in Pokemon.raw('SELECT pk, name, hp, attack, defense, sp_attack, sp_defense, speed FROM Pokemon'):
+	select_column = ['pk', 'name', 'hp', 'attack', 'defense', 'sp_attack', 'sp_defense', 'speed']
+	all_pokemon = get_pokemon(selection=select_column)
+	for pokemon in all_pokemon:
+		print pokemon.pk, pokemon.name
 		pt = {}
 		spritename = ''
 		t = get_pokemon_type(gen=7, pokemon=pokemon.pk, selection=['pokemon_type', 'pk', 'slot'])
